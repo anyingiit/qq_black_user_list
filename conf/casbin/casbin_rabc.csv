@@ -1,0 +1,10 @@
+p, public, /api/v1/public/*, *
+
+g, user, public
+p, user, /api/v1/user/*, *
+
+g, opr, user
+p, opr, /api/v1/opr/*, *
+
+g, admin, opr
+p, admin, /api/v1/admin/*, *
