@@ -1,9 +1,11 @@
 <!-- Source: Best-README-Template BLANK_README (Unlicense) — https://github.com/othneildrew/Best-README-Template -->
 <a id="readme-top"></a>
 
-# Qq Black User List
+# qq_black_user_list
 
-Qq black user list has no README describing its purpose; its manifest (go.mod, go.sum) marks it as a Go codebase, built with Go.
+A Go and Gin HTTP API that looks up a QQ account number in a MySQL table and returns its recorded incident and verification status, or reports the number as not listed.
+
+**English** · [简体中文](README.zh-CN.md)
 
 [![CI](https://github.com/anyingiit/qq_black_user_list/actions/workflows/ci.yml/badge.svg)](https://github.com/anyingiit/qq_black_user_list/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/anyingiit/qq_black_user_list)](LICENSE)
@@ -24,7 +26,18 @@ Qq black user list has no README describing its purpose; its manifest (go.mod, g
 
 ## About The Project
 
-Qq black user list has no README describing its purpose; its manifest (go.mod, go.sum) marks it as a Go codebase, built with Go.
+qq_black_user_list is a small Gin-based HTTP API with one working endpoint:
+`GET /api/v1/public/even/:qq_num` (router/router.go), handled by `GetEvenForQq`
+in router/api/v1/blackListEven.go. Given a QQ account number, it looks up a
+matching row in a MySQL table and returns the recorded incident text and a
+verification status, or a "not found" error code if the number has no record
+(models/blackListEvenModels.go).
+
+The handler queries a table named `qqblk_even`, but the schema shipped in
+docs/even.sql creates a table named `even`. The two need to be reconciled
+before that schema will actually serve the query the code runs — for example
+by applying the table prefix `pkg/setting/setting.go` reads from
+configuration.
 
 See the [open issues](https://github.com/anyingiit/qq_black_user_list/issues) for planned features and known issues.
 
@@ -32,20 +45,36 @@ See the [open issues](https://github.com/anyingiit/qq_black_user_list/issues) fo
 
 ### Prerequisites
 
-- Git
+- Go 1.16 or newer, the floor declared in `go.mod`
+- A MySQL server the app can reach, configured through the keys
+  `pkg/setting/setting.go` loads (`TYPE`, `USER`, `PASSWORD`, `HOST`, `NAME`)
+- The Casbin RBAC model and policy already shipped under `conf/casbin/`, which
+  `pkg/casbin/initCasbin.go` loads at startup
 
 ### Installation
 
 ```sh
 git clone https://github.com/anyingiit/qq_black_user_list.git
 cd qq_black_user_list
+go build ./...
 ```
+
+Create `conf/app/app.ini` (read by `pkg/setting/setting.go`) with `[server]`,
+`[app]` and `[database]` sections carrying at least the database type, user,
+password, host and name. Then create the table the handler queries — apply
+the schema in `docs/even.sql`, naming (or renaming) the table `qqblk_even` to
+match what `models/blackListEvenModels.go` actually selects from.
 
 ## Usage
 
 ```sh
-qq_black_user_list --help
+go run main.go
+curl http://127.0.0.1:8080/api/v1/public/even/<qq_num>
 ```
+
+A QQ number found in the table comes back with its `even_content`,
+`even_content_more_info` and `verify_status` fields; a number with no row
+comes back with the `ErrNoQqInList` error code (`pkg/e/code_def.go`).
 
 ## Contributing
 

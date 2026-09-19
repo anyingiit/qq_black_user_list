@@ -1,11 +1,22 @@
 # Source: GitHub starter workflow "Simple workflow" (MIT) — https://github.com/actions/starter-workflows/blob/main/ci/blank.yml
+#
+# Repaired by repocurator (feature 002):
+#   - `push` and `pull_request` triggered on `main`; this repository's default
+#     branch is `dev`, so the workflow had never run on a push to it.
+#   - the test job ran the starter's placeholder echo, so a green check proved
+#     only that the runner could print a sentence. There was no test in the
+#     repository at all, so `pkg/e/msg_test.go` was added as a real smoke test
+#     of the response-message lookup that the QQ-lookup handler
+#     (router/api/v1/blackListEven.go) reads its error text from.
+#   - a build step was added; the workflow previously never compiled the
+#     module before declaring success.
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
   pull_request:
-    branches: [main]
+    branches: [dev]
   workflow_dispatch:
 
 # The workflow token is read-only by default.
@@ -52,7 +63,12 @@ jobs:
         with:
           persist-credentials: false
 
-      # Replace the step below with your project's test command. Pin any setup
-      # action you add to a full commit SHA, like the checkout step above.
-      - name: Run tests
-        run: echo "No tests yet. Replace this step with your project's test command."
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.16'
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test
+        run: go test ./...
